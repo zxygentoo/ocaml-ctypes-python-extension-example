@@ -12,7 +12,7 @@ opam install ctypes-foreign ctypes
 make
 ```
 
-### Running Python tests on the example extension
+### Run Python tests on the example extension
 
 ```shell
 python3 tests.py
