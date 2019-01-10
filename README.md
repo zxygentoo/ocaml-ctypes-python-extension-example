@@ -6,6 +6,14 @@ Example showing how to write a Python extension module using [ocaml-ctypes](http
 opam install ctypes-foreign ctypes
 ```
 
+- and a workong python3 installation, eg. on ubuntu, it will be something like:
+
+```shell
+apt-get install python-dev
+```
+
+- tested on python-3.6.5 but should work on recent python3 releases.
+
 ### Build the example extension (pymod.so)
 
 ```shell
@@ -18,4 +26,3 @@ make
 python3 tests.py
 ```
 
-- tested on python-3.6.5 but should work on recent python3 releases.
