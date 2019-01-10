@@ -6,7 +6,9 @@ Example showing how to write a Python extension module using [ocaml-ctypes](http
 opam install ctypes-foreign ctypes
 ```
 
-- and a workong python3 installation, eg. on ubuntu, it will be something like:
+and a working python3 installation.
+
+eg. on ubuntu, it will be something like:
 
 ```shell
 apt-get install python-dev
