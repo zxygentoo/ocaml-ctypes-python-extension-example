@@ -1,4 +1,4 @@
-Example showing how to write a Python extension module using [ocaml-ctypes](https://github.com/ocamllabs/ocaml-ctypes/tree/master/src/ctypes) based on [ocaml-ctypes-inverted-stubs-example](https://github.com/yallop/ocaml-ctypes-inverted-stubs-example)
+Example showing how to write a Python extension module using [ocaml-ctypes](https://github.com/ocamllabs/ocaml-ctypes/tree/master/src/ctypes), based on [ocaml-ctypes-inverted-stubs-example](https://github.com/yallop/ocaml-ctypes-inverted-stubs-example).
 
 ### Install dependencies
 
