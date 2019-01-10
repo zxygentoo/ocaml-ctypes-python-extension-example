@@ -6,13 +6,13 @@ Example showing how to write a Python extension module using [ocaml-ctypes](http
 opam install ctypes-foreign ctypes
 ```
 
-### Build the example
+### Build the example extension (pymod.so)
 
 ```shell
 make
 ```
 
-### Run Python tests on the example extension
+### Run Python tests on example extension
 
 ```shell
 python3 tests.py
