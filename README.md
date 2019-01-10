@@ -12,8 +12,6 @@ opam install ctypes-foreign ctypes
 apt-get install python-dev
 ```
 
-- tested on python-3.6.5 but should work on recent python3 releases.
-
 ### Build the example extension (pymod.so)
 
 ```shell
@@ -26,3 +24,4 @@ make
 python3 tests.py
 ```
 
+- tested on python-3.6.5 but should work on recent python3 releases.
