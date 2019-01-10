@@ -23,8 +23,8 @@ let pyobject : pyobject structure typ = pyobject
 let (-:) f ty = field pyobject f ty
 let ob_refcnt = "ob_refcnt" -: ssize_t
 (* Binding the actual PyTypeObject will bring in a lot more stuffs to deal with,
-   as the primary goal of this example if to show the steps required 
-   to build a python extension module using ocaml, not to build a comprehensive
+   as the primary goal of this example is to show the basic steps to build 
+   a python extension module using ocaml, not to build a comprehensive
    ocaml python ffi layer, and we won't be using type objects,
    so we just bind it to a null pointer here. *)
 let ob_type = "ob_type" -: ptr void
