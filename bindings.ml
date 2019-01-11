@@ -17,12 +17,13 @@ let pycfunction = ptr pyobject @-> ptr pyobject @-> returning (ptr pyobject)
 let inquiryfunc_t = ptr pyobject @-> returning int
 let free_func_t = ptr void @-> returning (ptr void)
 let visitproc_t = ptr pyobject @-> ptr void @-> returning int
-let traverseproc_t = ptr pyobject @-> funptr visitproc_t @-> ptr void @-> returning int                     
+let traverseproc_t =
+  ptr pyobject @-> funptr visitproc_t @-> ptr void @-> returning int                     
 
 let pyobject : pyobject structure typ = pyobject
 let (-:) f ty = field pyobject f ty
 let ob_refcnt = "ob_refcnt" -: ssize_t
-(* Binding the actual PyTypeObject will bring in a lot more stuffs to deal with,
+(* Binding the actual PyTypeObject will bring a lot more stuffs to deal with,
    as the primary goal of this example is to show the basic steps to build 
    a python extension module using ocaml, not to build a comprehensive
    ocaml python ffi layer, and we won't be using type objects,
@@ -33,12 +34,14 @@ let () = seal pyobject
 let pymethoddef : pymethoddef structure typ = structure "PyMethodDef"
 let (-:) f ty = field pymethoddef f ty 
 let ml_name = "ml_name" -: string
-let ml_meth = "ml_meth" -: funptr_opt pycfunction
+(* see below for why `ml_meth` is a static_funptr instead of funptr *)
+let ml_meth = "ml_meth" -: Ctypes_static.static_funptr pycfunction
 let ml_flags = "ml_flags" -: int
 let ml_doc = "ml_doc" -: string
 let () = seal pymethoddef
 
-let pymoduledef_base : pymoduledef_base structure typ = structure "PyModuleDef_Base"
+let pymoduledef_base : 
+  pymoduledef_base structure typ = structure "PyModuleDef_Base"
 let (-:) f ty = field pymoduledef_base f ty
 let ob_base = "ob_base" -: pyobject
 let m_init = "m_init" -: funptr_opt (ptr pyobject @-> returning void)
@@ -62,18 +65,21 @@ let () = seal pymoduledef
 (* some Python C-API bindings we need *)
 
 let pylong_fromlong_t = int @-> returning (ptr pyobject)
-let pylong_fromlong = foreign "PyLong_FromLong" ~check_errno:true pylong_fromlong_t
+let pylong_fromlong =
+  foreign "PyLong_FromLong" ~check_errno:true pylong_fromlong_t
 
 let pylong_aslong_t = ptr pyobject @-> returning int
 let pylong_aslong = foreign "PyLong_AsLong" ~check_errno:true pylong_aslong_t
 
 let pytuple_getitem_t = ptr pyobject @-> ssize_t @-> returning (ptr pyobject)
-let pytuple_getitem = foreign "PyTuple_GetItem" ~check_errno:true pytuple_getitem_t
+let pytuple_getitem =
+  foreign "PyTuple_GetItem" ~check_errno:true pytuple_getitem_t
 
 (* Python doc suggests using PyModule_Create for most cases, but it's a macro,
    here we use the function form PyModule_Create2 for simple sake. *)
 let pymodule_create2_t = ptr pymoduledef @-> int @-> returning (ptr pyobject)
-let pymodule_create2 = foreign "PyModule_Create2" ~check_errno:true pymodule_create2_t
+let pymodule_create2 =
+  foreign "PyModule_Create2" ~check_errno:true pymodule_create2_t
 
 
 (* helpers *)
@@ -94,8 +100,8 @@ let pymoduledef_head_init =
 
 let make_method name doc f =
   let ml = make pymethoddef in
-  setf ml ml_meth (Some f);
   setf ml ml_name name;
+  setf ml ml_meth f;
   setf ml ml_flags 1;
   setf ml ml_doc doc;
   ml
@@ -120,23 +126,56 @@ let make_module_init mod_ptr =
   if is_null mod_ptr then failwith "pymod initialize failed"
   else pymodule_create2 mod_ptr python_api_version
 
+(* NOTE
 
-(* a test module `pymod` will two methods *)
+   The current desgin of ocaml-ctypes works very well when binding and calling
+   c code, but not as well the other way around.
+   Specially for things like structs with string/function pointers, 
+   as structs don't have clear deallocation equivalent like functions, 
+   it's possible running into automatic memory management issues.
+
+   The current recommendation from ctypes author is resolving to low-level api 
+   like `Ctypes_static.static_funptr` and  `ptr char` 
+   which doesn't do auto memory management. There are future plans to change 
+   the design of ctypes to make these kind of things easier.
+
+   That's why `ml_meth` is a static_funptr` instead of just a `funptr`, 
+   you can play with it to see if it causing problems :P
+
+   Here we add some helpers for those conversions.   
+*)
+
+let char_ptr_of_string s =
+  CArray.start (CArray.of_string s)
+
+let static_funptr_of_funptr ty fp =
+  coerce
+    (funptr ty)
+    (Ctypes_static.static_funptr ty)
+    fp
+
+let static_funptr_of_funptr_pycfunction =
+  static_funptr_of_funptr pycfunction
+
+
+(* a test module `pymod` with two methods *)
+
+let anser_meth _ _  = pylong_fromlong 42
 
 let answer =
   make_method
     "answer"
     "answer to everything"
-    (fun _ _ -> pylong_fromlong 42)
+    (static_funptr_of_funptr_pycfunction anser_meth)
+
+let double_int_meth _ args =
+  pylong_fromlong (2 * (pylong_aslong (pytuple_getitem args (Ssize.of_int 0))))
 
 let double_int =
   make_method
     "double_int"
     "accept an int and return the double of it"
-    (fun _ args ->
-       pylong_fromlong 
-         (2 * (pylong_aslong (pytuple_getitem args (Ssize.of_int 0))))
-    )
+    (static_funptr_of_funptr_pycfunction double_int_meth)
 
 let pymod_ptr =
   allocate pymoduledef
