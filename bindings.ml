@@ -13,7 +13,7 @@ type pymoduledef
 
 let pyobject : pyobject structure typ = structure "PyObject"
 
-let pycfunction = ptr pyobject @-> ptr pyobject @-> returning (ptr pyobject)
+let pycfunction_t = ptr pyobject @-> ptr pyobject @-> returning (ptr pyobject)
 let inquiryfunc_t = ptr pyobject @-> returning int
 let free_func_t = ptr void @-> returning (ptr void)
 let visitproc_t = ptr pyobject @-> ptr void @-> returning int
@@ -35,7 +35,7 @@ let pymethoddef : pymethoddef structure typ = structure "PyMethodDef"
 let (-:) f ty = field pymethoddef f ty 
 let ml_name = "ml_name" -: string
 (* see below for why `ml_meth` is a static_funptr instead of funptr *)
-let ml_meth = "ml_meth" -: Ctypes_static.static_funptr pycfunction
+let ml_meth = "ml_meth" -: Ctypes_static.static_funptr pycfunction_t
 let ml_flags = "ml_flags" -: int
 let ml_doc = "ml_doc" -: string
 let () = seal pymethoddef
@@ -155,7 +155,7 @@ let static_funptr_of_funptr ty fp =
     fp
 
 let static_funptr_of_funptr_pycfunction =
-  static_funptr_of_funptr pycfunction
+  static_funptr_of_funptr pycfunction_t
 
 
 (* a test module `pymod` with two methods *)
